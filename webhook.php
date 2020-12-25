@@ -1,7 +1,9 @@
 <?php 
 require_once("vendor/autoload.php"); 
+require_once("wikipediasearch.php");
 
 /* 
+    Start to develop here. Best regards https://php-download.com/ 
     Examples and download: https://php-download.com/package/eristemena/dialogflow-fulfillment-webhook-php/example
     Source: https://github.com/eristemena/dialogflow-fulfillment-webhook-php
 
@@ -9,16 +11,17 @@ require_once("vendor/autoload.php");
 
 use Dialogflow\WebhookClient;
 use Dialogflow\RichMessage\Card;
+use Dialogflow\RichMessage\Image;
 use Dialogflow\RichMessage\Suggestion;
 use Dialogflow\RichMessage\Text;
 use Dialogflow\RichMessage\Payload;
 
 use Dialogflow\Action\Responses\LinkOutSuggestion;
 use Dialogflow\Action\Responses\Suggestions;
-use Dialogflow\Action\Responses\Image;
+// use Dialogflow\Action\Responses\Image;
 use Dialogflow\Action\Responses\BasicCard;
 
-$json_url = "http://gsx2json.com/api?id=1wxxksdfhksdfh324876sfsd";
+$json_url = "http://192.168.0.83:3003/api?id=1w5O87JMpfO-ZL0B4H-F1FC4syoduND_Z3JLhMcyegeE";
 $json_ixperium_medewerkers = file_get_contents($json_url);
 $data_ixperium_medewerkers = json_decode($json_ixperium_medewerkers);
 
@@ -61,6 +64,12 @@ if (strpos($session, 'dfMessenger') !== false) {
     $dfMessenger = false;
 }
 
+if (strpos($session, 'discordbot') !== false) {
+    $discordbot = true;
+} else {
+    $discordbot = false;
+}
+
 if ('chatbot.showsource' == $agent->getIntent() ) {
     
     $debug = array(
@@ -76,6 +85,7 @@ if ('chatbot.showsource' == $agent->getIntent() ) {
         "hasconv" => $hasconv,
         "kommunicatebot" => $kommunicatebot,
         "hasscreen" => $hasscreen,
+		"discordbot" => $discordbot,
         "dfMessenger" => $dfMessenger);
         
     $debug_json = json_encode($debug);
@@ -97,7 +107,7 @@ elseif ('chatbotmovel.wieis' == $agent->getIntent() ) {
                         ->formattedText($medewerker->functie)
                         ->image($medewerker->afbeelding)
                         ->button('Meer info...', $medewerker->meerinfo);
-                        $conv->ask($card);
+                    $conv->ask($card);
                 } else {
                     # no screen (Google Home Mini)
                     $conv->ask($medewerker->tekstinfo);
@@ -110,6 +120,18 @@ elseif ('chatbotmovel.wieis' == $agent->getIntent() ) {
                     ->image($medewerker->afbeelding)
                     ->button('Meer info...', $medewerker->meerinfo);
                 $agent->reply($card); 
+			} elseif ($discordbot) {
+				$card = \Dialogflow\RichMessage\Card::create()
+                    ->title($medewerker->naam)
+                    ->text($medewerker->functie)
+                    ->image($medewerker->afbeelding)
+                    ->button('Meer info...', $medewerker->meerinfo);
+                $agent->reply($card); 
+				$image = \Dialogflow\RichMessage\Image::create($medewerker->afbeelding);
+				$agent->reply($image);
+				$agent->reply($medewerker->tekstinfo);
+				
+				
             } elseif ($dfMessenger) {
                 # dialogflow messenger
                 $agent->reply($medewerker->tekstinfo);
@@ -142,8 +164,31 @@ elseif ('chatbotmovel.wieis' == $agent->getIntent() ) {
         }
     }
     if (!$found) {
-        $agent->reply('Ik heb nog geen uitgebreide informatie over ' . $parameters["geslacht"].' '.$parameters["chatbotmovel_personen"].' beschikbaar. Maar ik leer elke dag nog bij.');
+        $reply = wikipediaSearch($query);
+        if ($conv) {
+            if (!$hasscreen) {
+                $agent->reply(replace_content_using_delimiters(" (",")","",$reply));
+            } else {
+                $agent->reply($reply);
+            }
+        } else{
+            $agent->reply($reply);      
+        }     
+        // $agent->reply('Ik heb nog geen uitgebreide informatie over ' . $parameters["geslacht"].' '.$parameters["chatbotmovel_personen"].' beschikbaar. Maar ik leer elke dag nog bij.');
     }
+}
+elseif ('Default Fallback Intent' == $agent->getIntent() ) {
+        $reply = wikipediaSearch($query);
+        if ($conv) {
+            if (!$hasscreen) {
+                $agent->reply(replace_content_using_delimiters(" (",")","",$reply));
+            } else {
+                $agent->reply($reply);
+            }
+        } else{
+            $agent->reply($reply);      
+        }     
+
 }
     
 else {
