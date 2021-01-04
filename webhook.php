@@ -21,7 +21,7 @@ use Dialogflow\Action\Responses\Suggestions;
 // use Dialogflow\Action\Responses\Image;
 use Dialogflow\Action\Responses\BasicCard;
 
-$json_url = "http://192.168.0.83:3003/api?id=1w5O87JMpfO-ZL0B4H-F1FC4syoduND_Z3JLhMcyegeE";
+$json_url = "http://192.168.0.83:3003/api?id=ReplaceWithYourID";
 $json_ixperium_medewerkers = file_get_contents($json_url);
 $data_ixperium_medewerkers = json_decode($json_ixperium_medewerkers);
 
